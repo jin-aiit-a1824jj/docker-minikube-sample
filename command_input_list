@@ -1,0 +1,267 @@
+  *1
+  touch mongodb-org-4.0.repo
+  touch Dockerfile
+  docker build -t debug .
+  docker run -it debug sh
+  mongo
+  ip
+  ifconfig
+  jq
+  exit
+  docker container prune
+  touch debug-pod.yml
+  kubectl apply -f debug-pod.yml
+  kubectl get pod
+  kubectl exec -it debug sh
+  ip
+  mongo
+  jq
+  exit
+  kubectl get pod
+
+
+*2
+touch .dockerignore
+touch docker-entrypoint.sh
+touch Dockerfile
+docker build -t weblog-db:v1.0.0 .
+docker run -d weblog-db:v1.0.0
+docker container ls
+docker exec -it [container-name] sh
+mongo
+show dbs
+exit
+exit
+docker stop [container-name]
+docker system prune
+
+
+*3
+touch weblog-db-storage.yml
+mkdir -p /data/storage
+ls /data/
+kubectl apply -f weblog-db-storage.yml
+kubectl get pvc,pv
+
+ls /data/storage
+rm -rf /data/storage/*
+kubectl apply -f weblog-db-storage.yml
+kubectl get pod,pvc,pv
+ls /data/storage
+kubectl exec -it mongodb sh
+mongo
+show dbs
+exit
+exit
+kubectl delete -f weblog-db-storage.yml
+
+openssl rand -base64 1024 | tr -d '\r\n' | cut -c 1-1024 > keyfile
+kubectl create secret generic mongo-secret --from-literal=root_username=admin --from-literal=root_password=Passw0rd --from-file=./keyfile
+kubectl get secret/mongo-secret -o yaml
+kubectl delete secret/mongo-secret
+ls /data/storage/
+rm -rf /data/storage/*
+kubectl apply -f weblog-db-storage.yml
+kubectl get pod
+kubectl exec -it mongodb sh
+mongo
+show dbs
+use admin
+db.auth("admin", "Passw0rd")
+show dbs
+exit
+exit
+kubectl delete -f weblog-db-storage.yml
+
+
+mkdir -p /data/pv0000
+mkdir -p /data/pv0001
+mkdir -p /data/pv0002
+kubectl get pod
+kubectl apply -f weblog-db-storage.yml
+kubectl get pod -w
+kubectl exec -it mongo-0 sh
+mongo
+use admin
+db.auth("admin","Passw0rd")
+exit
+exit
+kubectl delete -f weblog-db-storage.yml
+ctrl+c
+kubectl get pvc,pv
+kubectl delete persistentvolumeclaim/storage-mongo-0 persistentvolumeclaim/storage-mongo-1 persistentvolumeclaim/storage-mongo-2 persistentvolume/storage-volume-0 persistentvolume/storage-volume-1 persistentvolume/storage-volume-2
+kubectl get pvc,pv,pod
+
+
+ls /data/pv0000
+kubectl get pod
+kubectl apply -f weblog-db-storage.yml
+kubectl get pod -w
+kubectl exec -it mongo-0 sh
+ping mongo-1.db-svc
+mongo
+use admin
+db.auth("admin","Passw0rd")
+rs.initiate({ _id: "rs0", members: [ {_id: 0, host: "mongo-0.db-svc:27017"}, {_id: 1, host: "mongo-1.db-svc:27017"}, {_id: 2, host: "mo
+ngo-2.db-svc:27017"} ] })
+rs.status()
+show dbs
+exit
+exit
+
+
+kubectl get pod
+kubectl cp ./init.sh debug:/root/init-db/
+kubectl cp ./adduser.js debug:/root/init-db/
+kubectl cp ./drop.js debug:/root/init-db/
+kubectl cp ./insert.js debug:/root/init-db/
+kubectl exec -it debug sh
+cd /root/init-db
+ls
+mongo mongo-0.db-svc
+rs.status()
+use admin
+db.auth("admin","Passw0rd")
+rs.status()
+sh init.sh
+mongo mongo-0.db-svc
+use admin
+db.auth("admin","Passw0rd")
+show dbs
+use weblog
+show collections
+db.posts.find().pretty()
+
+
+*4
+touch .dockerignore
+touch docker-entrypoint.sh
+touch Dockerfile
+docker build -t weblog-app:v1.0.0 .
+kubectl get pod
+kubectl exec -it mongo-0 sh
+mongo
+use admin
+db.auth("admin","Passw0rd")
+rs.status()
+exit
+exit
+kubectl get pod -o wide
+touch weblog-db-service.yml
+kubectl apply -f weblog-db-service.yml 
+ifconfig
+docker run\
+  -e MONGODB_USERNAME="user"\
+  -e MONGODB_PASSWORD="welcome"\
+  -e MONGODB_HOSTS="10.0.2.15:32717"\
+  -e MONGODB_DATABASE="weblog"\
+  -d\
+  -p 8080:3000\
+  weblog-app:v1.0.0
+docker stop xxx
+docker container prune
+kubectl delete -f weblog-db-service.yml 
+exit
+kubectl get pod
+kubectl delete pod/nodeapp
+
+*5
+touch weblog-app-pod.yml
+echo -n "user" | base64
+echo -n "welcome" | base64
+kubectl apply -f weblog-app-pod.yml 
+kubectl get pod -o wide
+kubectl exec -it debug sh
+curl 172.17.0.xx:3000
+get pod
+kubectl delete pod/nodeapp
+
+
+kubectl apply -f weblog-app-pod.yml
+kubectl get pod -o wide
+kubectl exec -it debug sh
+curl 172.17.0.13:3000
+curl 172.17.0.14:3000
+curl 172.17.0.15:3000
+exit
+kubetcl get deploy
+kubectl delete deploy/nodeapp
+
+
+kubectl apply -f weblog-app-pod.yml
+kubectl get pod -o wide
+kubectl exec -it debug sh
+curl http://app-svc:3000/
+exit
+kubectl get pod
+kubectl logs pod/nodeapp-5467594cfc-7qtfn
+kubectl logs pod/nodeapp-5467594cfc-j456w
+kubectl logs pod/nodeapp-5467594cfc-mc5ld
+
+
+*6
+touch docker-entrypoint.sh
+touch Dockerfile
+docker build -t weblog-web:v1.0.0 .
+touch weblog-app-service.yml
+kubectl apply -f weblog-app-service.yml
+ifconfig 
+docker run\
+  -e APPLICATION_HOST=10.0.2.15:30000\
+  -p 8080:80\
+  -d\
+  weblog-web:v1.0.0
+docker container stop ...
+docker container prune
+kubectl delete -f weblog-app-service.yml
+
+
+*7
+touch weblog-web-pod.yml
+kubectl apply -f weblog-web-pod.yml 
+kubectl get pod -o wide
+kubectl exec -it debug sh
+curl http://172.17.0.16
+exit
+kubectl get pod
+kubectl logs pod/nodeapp-5467594cfc-7qtfn
+kubectl logs pod/nodeapp-5467594cfc-j456w
+kubectl logs pod/nodeapp-5467594cfc-mc5ld
+kubectl delete -f weblog-web-pod.yml 
+
+
+kubectl apply -f weblog-web-pod.yml
+kubectl get pod
+kubectl exec -it nginx sh
+cat /etc/nginx/nginx.conf 
+exit
+kubectl get pod -o wide
+kubectl exec -it debug sh
+curl http://172.17.0.16
+exit
+kubectl delete -f weblog-web-pod.yml
+
+
+kubectl apply -f weblog-web-pod.yml
+kubectl get pod -o wide
+kubectl exec -it debug sh
+curl http://172.17.0.17
+curl http://172.17.0.18
+curl http://172.17.0.19
+exit
+kubectl delete -f weblog-web-pod.yml 
+
+
+kubectl apply -f weblog-web-pod.yml
+kubectl get pod,svc
+kubectl exec -it debug sh
+curl http://web-svc
+exit
+
+
+
+*8
+touch weblog-ingress.yml
+kubectl apply -f weblog-ingress.yml
+kubectl get ing
+kubectl get ing -w
